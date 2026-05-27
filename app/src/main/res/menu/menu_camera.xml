@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_header_matching"
+        android:title="Matching"
+        android:enabled="false" />
+    <item
+        android:id="@+id/action_whole_word"
+        android:title="Whole word only"
+        android:checkable="true"
+        android:checked="false" />
+    <item
+        android:id="@+id/action_case_sensitive"
+        android:title="Case sensitive"
+        android:checkable="true"
+        android:checked="false" />
+
+    <item
+        android:id="@+id/action_header_feedback"
+        android:title="Feedback"
+        android:enabled="false" />
+    <item
+        android:id="@+id/action_visual"
+        android:title="Visual highlights"
+        android:checkable="true"
+        android:checked="true" />
+    <item
+        android:id="@+id/action_haptic"
+        android:title="Haptic"
+        android:checkable="true"
+        android:checked="true" />
+    <item
+        android:id="@+id/action_audio"
+        android:title="Audio"
+        android:checkable="true"
+        android:checked="true" />
+    <item
+        android:id="@+id/action_audio_sound"
+        android:title="Audio sound"
+        android:checkable="false" />
+
+</menu>

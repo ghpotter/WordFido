@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/cameraFragment">
+
+    <fragment
+        android:id="@+id/cameraFragment"
+        android:name="com.gregoryhpotter.textlistscanner.ui.camera.CameraFragment"
+        android:label="Camera">
+        <action
+            android:id="@+id/action_camera_to_wordlist"
+            app:destination="@id/wordListFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/wordListFragment"
+        android:name="com.gregoryhpotter.textlistscanner.ui.wordlist.WordListFragment"
+        android:label="Word List" />
+
+</navigation>
