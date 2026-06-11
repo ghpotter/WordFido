@@ -38,6 +38,10 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 }
 
@@ -48,6 +52,16 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // Compose
+    val composeBom = platform(libs.androidx.compose.bom)
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 
     // Hilt
     implementation(libs.hilt.android)
