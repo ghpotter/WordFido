@@ -73,6 +73,12 @@ dependencies {
     implementation(libs.navigation.fragment.ktx)
     implementation(libs.navigation.ui.ktx)
 
+    // Room
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+    testImplementation(libs.room.testing)
+
     // Coroutines
     implementation(libs.coroutines.core)
     testImplementation(libs.coroutines.test)

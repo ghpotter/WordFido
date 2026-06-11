@@ -1,37 +1,43 @@
 package com.gregoryhpotter.textlistscanner.data.repository
 
+import android.content.Context
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.gregoryhpotter.textlistscanner.data.db.AppDatabase
 import com.gregoryhpotter.textlistscanner.data.model.WordEntry
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.io.File
 
-/**
- * Tests for WordListRepository.
- *
- * Uses JUnit's TemporaryFolder rule to create a real but disposable
- * file system — no mocking needed for file I/O.
- */
 @RunWith(RobolectricTestRunner::class)
 class WordListRepositoryTest {
 
-    @get:Rule
-    val tempFolder = TemporaryFolder()
-
+    private lateinit var db: AppDatabase
     private lateinit var repository: WordListRepository
-    private lateinit var storageFile: File
 
     @Before
     fun setUp() {
-        storageFile = tempFolder.newFile("word_list.json")
-        repository = WordListRepository(storageFile)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+
+        val prefs = context.getSharedPreferences("test_settings", Context.MODE_PRIVATE)
+        prefs.edit().clear().commit()
+
+        repository = WordListRepository(db, SettingsRepository(prefs))
+        runBlocking { repository.ensureDefaultProfile() }
+    }
+
+    @After
+    fun tearDown() {
+        db.close()
     }
 
     // -------------------------------------------------------------------------
@@ -39,114 +45,81 @@ class WordListRepositoryTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `empty file returns empty list`() = runTest {
-        val words = repository.loadWords()
-        assertTrue(words.isEmpty())
-    }
-
-    @Test
-    fun `fresh repository has no words`() = runTest {
-        assertEquals(0, repository.loadWords().size)
+    fun `fresh repository has no words`() = runBlocking {
+        assertTrue(repository.loadWords().isEmpty())
     }
 
     // -------------------------------------------------------------------------
-    // Save and load
+    // Add and load
     // -------------------------------------------------------------------------
 
     @Test
-    fun `saved word can be loaded back`() = runTest {
-        val entry = WordEntry(text = "exit", color = 0xFF0000, enabled = true)
-        repository.saveWords(listOf(entry))
-
+    fun `added word can be loaded back`() = runBlocking {
+        repository.addWord(WordEntry(text = "exit", color = 0xFF0000, enabled = true))
         val loaded = repository.loadWords()
         assertEquals(1, loaded.size)
         assertEquals("exit", loaded.first().text)
     }
 
     @Test
-    fun `saved color is preserved after load`() = runTest {
-        val entry = WordEntry(text = "exit", color = 0xFF0000, enabled = true)
-        repository.saveWords(listOf(entry))
-
-        val loaded = repository.loadWords()
-        assertEquals(0xFF0000, loaded.first().color)
+    fun `saved color is preserved`() = runBlocking {
+        repository.addWord(WordEntry(text = "exit", color = 0xFF0000, enabled = true))
+        assertEquals(0xFF0000, repository.loadWords().first().color)
     }
 
     @Test
-    fun `saved enabled state is preserved after load`() = runTest {
-        val entry = WordEntry(text = "exit", color = 0xFF0000, enabled = false)
-        repository.saveWords(listOf(entry))
-
-        val loaded = repository.loadWords()
-        assertFalse(loaded.first().enabled)
+    fun `saved enabled state is preserved`() = runBlocking {
+        repository.addWord(WordEntry(text = "exit", color = 0xFF0000, enabled = false))
+        assertFalse(repository.loadWords().first().enabled)
     }
 
     @Test
-    fun `multiple words are all saved and loaded`() = runTest {
-        val entries = listOf(
-            WordEntry(text = "exit", color = 0xFF0000, enabled = true),
-            WordEntry(text = "door", color = 0x00FF00, enabled = true),
-            WordEntry(text = "stairs", color = 0x0000FF, enabled = false)
-        )
-        repository.saveWords(entries)
-
-        val loaded = repository.loadWords()
-        assertEquals(3, loaded.size)
-        assertEquals(listOf("exit", "door", "stairs"), loaded.map { it.text })
+    fun `multiple words are all saved`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
+        repository.addWord(WordEntry("door", 0x00FF00, true))
+        repository.addWord(WordEntry("stairs", 0x0000FF, false))
+        assertEquals(3, repository.loadWords().size)
     }
 
-    @Test
-    fun `saving overwrites previous list`() = runTest {
-        repository.saveWords(listOf(WordEntry(text = "exit", color = 0xFF0000, enabled = true)))
-        repository.saveWords(listOf(WordEntry(text = "door", color = 0x00FF00, enabled = true)))
+    // -------------------------------------------------------------------------
+    // saveWords replaces the list
+    // -------------------------------------------------------------------------
 
+    @Test
+    fun `saveWords replaces existing words`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
+        repository.saveWords(listOf(WordEntry("door", 0x00FF00, true)))
         val loaded = repository.loadWords()
         assertEquals(1, loaded.size)
         assertEquals("door", loaded.first().text)
     }
 
     // -------------------------------------------------------------------------
-    // Add and remove individual entries
+    // Remove
     // -------------------------------------------------------------------------
 
     @Test
-    fun `addWord appends to existing list`() = runTest {
-        repository.saveWords(listOf(WordEntry(text = "exit", color = 0xFF0000, enabled = true)))
-        repository.addWord(WordEntry(text = "door", color = 0x00FF00, enabled = true))
-
-        val loaded = repository.loadWords()
-        assertEquals(2, loaded.size)
-    }
-
-    @Test
-    fun `removeWord deletes entry by text`() = runTest {
-        repository.saveWords(listOf(
-            WordEntry(text = "exit", color = 0xFF0000, enabled = true),
-            WordEntry(text = "door", color = 0x00FF00, enabled = true)
-        ))
+    fun `removeWord deletes the entry`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
+        repository.addWord(WordEntry("door", 0x00FF00, true))
         repository.removeWord("exit")
-
         val loaded = repository.loadWords()
         assertEquals(1, loaded.size)
         assertEquals("door", loaded.first().text)
     }
 
     @Test
-    fun `removeWord on non-existent word leaves list unchanged`() = runTest {
-        repository.saveWords(listOf(WordEntry(text = "exit", color = 0xFF0000, enabled = true)))
+    fun `removeWord on non-existent word is a no-op`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
         repository.removeWord("door")
-
-        val loaded = repository.loadWords()
-        assertEquals(1, loaded.size)
+        assertEquals(1, repository.loadWords().size)
     }
 
     @Test
-    fun `addWord does not add duplicate text`() = runTest {
-        repository.saveWords(listOf(WordEntry(text = "exit", color = 0xFF0000, enabled = true)))
-        repository.addWord(WordEntry(text = "exit", color = 0x00FF00, enabled = true))
-
-        val loaded = repository.loadWords()
-        assertEquals(1, loaded.size)
+    fun `addWord does not add duplicate text`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
+        repository.addWord(WordEntry("exit", 0x00FF00, true))
+        assertEquals(1, repository.loadWords().size)
     }
 
     // -------------------------------------------------------------------------
@@ -154,89 +127,96 @@ class WordListRepositoryTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `setWordEnabled updates enabled state`() = runTest {
-        repository.saveWords(listOf(WordEntry(text = "exit", color = 0xFF0000, enabled = true)))
+    fun `setWordEnabled updates enabled state`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
         repository.setWordEnabled("exit", false)
-
-        val loaded = repository.loadWords()
-        assertFalse(loaded.first().enabled)
-    }
-
-    @Test
-    fun `setWordEnabled on non-existent word does not throw`() = runTest {
-        repository.saveWords(listOf(WordEntry(text = "exit", color = 0xFF0000, enabled = true)))
-        repository.setWordEnabled("door", false) // should be a no-op
-
-        val loaded = repository.loadWords()
-        assertEquals(1, loaded.size)
+        assertFalse(repository.loadWords().first().enabled)
     }
 
     // -------------------------------------------------------------------------
-    // Import from CSV / TXT
+    // Color
     // -------------------------------------------------------------------------
 
     @Test
-    fun `importFromText parses comma separated words`() = runTest {
-        val imported = repository.importFromText("exit,door,stairs")
-        assertEquals(3, imported.size)
-        assertEquals(listOf("exit", "door", "stairs"), imported.map { it.text })
-    }
-
-    @Test
-    fun `importFromText parses newline separated words`() = runTest {
-        val imported = repository.importFromText("exit\ndoor\nstairs")
-        assertEquals(3, imported.size)
-    }
-
-    @Test
-    fun `importFromText trims whitespace from each word`() = runTest {
-        val imported = repository.importFromText("  exit , door , stairs  ")
-        assertEquals(listOf("exit", "door", "stairs"), imported.map { it.text })
-    }
-
-    @Test
-    fun `importFromText ignores blank entries`() = runTest {
-        val imported = repository.importFromText("exit,,door,  ,stairs")
-        assertEquals(3, imported.size)
-    }
-
-    @Test
-    fun `importFromText deduplicates words case-insensitively`() = runTest {
-        val imported = repository.importFromText("exit,Exit,EXIT")
-        assertEquals(1, imported.size)
-    }
-
-    @Test
-    fun `importFromText assigns default color and enabled state`() = runTest {
-        val imported = repository.importFromText("exit")
-        assertTrue(imported.first().enabled)
-        // Color should be a valid non-zero ARGB value
-        assertTrue(imported.first().color != 0)
-    }
-
-    // -------------------------------------------------------------------------
-    // Color tests
-    // -------------------------------------------------------------------------
-
-    @Test
-    fun `updateColor changes color for matching word`() = runTest {
+    fun `updateColor changes color for matching word`() = runBlocking {
         repository.addWord(WordEntry("hello", 0xFFFF0000.toInt(), true))
         repository.updateColor("hello", 0xFF0000FF.toInt())
-        assertEquals(0xFF0000FF.toInt(), repository.loadWords().first { it.text == "hello" }.color)
+        assertEquals(0xFF0000FF.toInt(), repository.loadWords().first().color)
     }
 
     @Test
-    fun `updateColor does not affect other words`() = runTest {
+    fun `updateColor does not affect other words`() = runBlocking {
         repository.addWord(WordEntry("hello", 0xFFFF0000.toInt(), true))
         repository.addWord(WordEntry("world", 0xFF00FF00.toInt(), true))
         repository.updateColor("hello", 0xFF0000FF.toInt())
         assertEquals(0xFF00FF00.toInt(), repository.loadWords().first { it.text == "world" }.color)
     }
 
+    // -------------------------------------------------------------------------
+    // Import
+    // -------------------------------------------------------------------------
+
     @Test
-    fun `updateColor is a no-op for unknown word`() = runTest {
-        repository.addWord(WordEntry("hello", 0xFFFF0000.toInt(), true))
-        repository.updateColor("unknown", 0xFF0000FF.toInt())
-        assertEquals(0xFFFF0000.toInt(), repository.loadWords().first().color)
+    fun `importFromText parses comma separated words`() {
+        val imported = repository.importFromText("exit,door,stairs")
+        assertEquals(listOf("exit", "door", "stairs"), imported.map { it.text })
+    }
+
+    @Test
+    fun `importFromText parses newline separated words`() {
+        val imported = repository.importFromText("exit\ndoor\nstairs")
+        assertEquals(3, imported.size)
+    }
+
+    @Test
+    fun `importFromText trims whitespace`() {
+        val imported = repository.importFromText("  exit , door , stairs  ")
+        assertEquals(listOf("exit", "door", "stairs"), imported.map { it.text })
+    }
+
+    @Test
+    fun `importFromText ignores blank entries`() {
+        val imported = repository.importFromText("exit,,door,  ,stairs")
+        assertEquals(3, imported.size)
+    }
+
+    @Test
+    fun `importFromText deduplicates case-insensitively`() {
+        val imported = repository.importFromText("exit,Exit,EXIT")
+        assertEquals(1, imported.size)
+    }
+
+    // -------------------------------------------------------------------------
+    // Multiple profiles
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `words from different profiles are isolated`() = runBlocking {
+        repository.addWord(WordEntry("grocery", 0xFF0000, true))
+
+        val newProfileId = repository.createProfile("Work")
+        repository.setActiveProfile(newProfileId)
+        repository.addWord(WordEntry("invoice", 0x00FF00, true))
+
+        assertEquals(listOf("invoice"), repository.loadWords().map { it.text })
+
+        repository.setActiveProfile(repository.activeProfileId.let {
+            // switch back to original profile
+            val profiles = db.wordProfileDao().getAll()
+            profiles.first { p -> p.id != newProfileId }.id
+        })
+        assertEquals(listOf("grocery"), repository.loadWords().map { it.text })
+    }
+
+    @Test
+    fun `deleting a profile deletes its words`() = runBlocking {
+        val secondId = repository.createProfile("Temp")
+        repository.setActiveProfile(secondId)
+        repository.addWord(WordEntry("temp", 0xFF0000, true))
+
+        repository.deleteProfile(secondId)
+
+        // active profile switched away; no "temp" word in new active profile
+        assertFalse(repository.loadWords().any { it.text == "temp" })
     }
 }

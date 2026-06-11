@@ -25,6 +25,10 @@ class SettingsRepository @Inject constructor(
         get() = prefs.getBoolean(KEY_AUDIO, DEFAULT_AUDIO)
         set(value) { prefs.edit().putBoolean(KEY_AUDIO, value).apply() }
 
+    var activeProfileId: Long
+        get() = prefs.getLong(KEY_ACTIVE_PROFILE, -1L)
+        set(value) { prefs.edit().putLong(KEY_ACTIVE_PROFILE, value).apply() }
+
     var audioTone: AudioFeedbackTone
         get() {
             val name = prefs.getString(KEY_AUDIO_TONE, DEFAULT_AUDIO_TONE.name)
@@ -37,6 +41,7 @@ class SettingsRepository @Inject constructor(
         const val KEY_WHOLE_WORD = "whole_word"
         const val KEY_HAPTIC = "haptic_enabled"
         const val KEY_AUDIO = "audio_enabled"
+        const val KEY_ACTIVE_PROFILE = "active_profile_id"
 
         const val DEFAULT_CASE_SENSITIVE = false
         const val DEFAULT_WHOLE_WORD = true

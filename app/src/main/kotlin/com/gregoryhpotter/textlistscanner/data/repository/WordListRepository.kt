@@ -1,121 +1,124 @@
 package com.gregoryhpotter.textlistscanner.data.repository
 
+import androidx.room.withTransaction
+import com.gregoryhpotter.textlistscanner.data.db.AppDatabase
+import com.gregoryhpotter.textlistscanner.data.db.WordProfileEntity
+import com.gregoryhpotter.textlistscanner.data.db.toEntity
 import com.gregoryhpotter.textlistscanner.data.model.WordEntry
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.gregoryhpotter.textlistscanner.data.model.WordProfile
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.File
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
-/**
- * Persists the word list as a JSON flat file.
- *
- * All operations are main-safe — file I/O is dispatched to [Dispatchers.IO].
- */
-class WordListRepository(private val storageFile: File) {
+@Singleton
+class WordListRepository @Inject constructor(
+    private val db: AppDatabase,
+    private val settingsRepository: SettingsRepository
+) {
+    private val _activeProfileId = MutableStateFlow(settingsRepository.activeProfileId)
 
-    private val _wordsFlow = MutableStateFlow<List<WordEntry>>(emptyList())
-    val wordsFlow: Flow<List<WordEntry>> = _wordsFlow.asStateFlow()
+    val activeProfileId: Long get() = _activeProfileId.value
 
-    init {
-        // Initial load
-        val initialWords = try {
-            if (storageFile.exists() && storageFile.length() > 0L) {
-                parseJson(storageFile.readText())
-            } else emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
-        _wordsFlow.value = initialWords
+    val profilesFlow: Flow<List<WordProfile>> = db.wordProfileDao().watchAll()
+        .map { entities -> entities.map { it.toDomain() } }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val wordsFlow: Flow<List<WordEntry>> = _activeProfileId.flatMapLatest { profileId ->
+        if (profileId < 0L) flowOf(emptyList())
+        else db.wordEntryDao().watchByProfile(profileId)
+            .map { entities -> entities.map { it.toDomain() } }
     }
 
     // -------------------------------------------------------------------------
-    // Default colors assigned to imported words (cycles through the list)
+    // Profile management
     // -------------------------------------------------------------------------
 
-    private val defaultColors = listOf(
-        0xFFE53935.toInt(), // red
-        0xFF1E88E5.toInt(), // blue
-        0xFF43A047.toInt(), // green
-        0xFFFB8C00.toInt(), // orange
-        0xFF8E24AA.toInt(), // purple
-        0xFF00ACC1.toInt(), // cyan
-        0xFFFFB300.toInt(), // amber
-        0xFF6D4C41.toInt()  // brown
-    )
-
-    // -------------------------------------------------------------------------
-    // Public API
-    // -------------------------------------------------------------------------
-
-    suspend fun loadWords(): List<WordEntry> = withContext(Dispatchers.IO) {
-        val words = if (!storageFile.exists() || storageFile.length() == 0L) emptyList()
-        else {
-            try {
-                parseJson(storageFile.readText())
-            } catch (e: Exception) {
-                emptyList()
-            }
+    suspend fun ensureDefaultProfile() {
+        var profileId = settingsRepository.activeProfileId
+        if (profileId >= 0L) {
+            _activeProfileId.value = profileId
+            return
         }
-        _wordsFlow.value = words
-        words
+        val existing = db.wordProfileDao().getAll()
+        profileId = if (existing.isNotEmpty()) {
+            existing.first().id
+        } else {
+            db.wordProfileDao().insert(WordProfileEntity(name = "Default"))
+        }
+        setActiveProfile(profileId)
     }
 
-    suspend fun saveWords(words: List<WordEntry>) = withContext(Dispatchers.IO) {
-        val array = JSONArray()
-        words.forEach { entry ->
-            val obj = JSONObject().apply {
-                put(KEY_TEXT, entry.text)
-                put(KEY_COLOR, entry.color)
-                put(KEY_ENABLED, entry.enabled)
-            }
-            array.put(obj)
+    fun setActiveProfile(id: Long) {
+        settingsRepository.activeProfileId = id
+        _activeProfileId.value = id
+    }
+
+    suspend fun createProfile(name: String): Long =
+        db.wordProfileDao().insert(WordProfileEntity(name = name.trim()))
+
+    suspend fun deleteProfile(id: Long) {
+        db.wordProfileDao().deleteById(id)
+        if (_activeProfileId.value == id) {
+            val remaining = db.wordProfileDao().getAll()
+            val nextId = remaining.firstOrNull()?.id
+                ?: db.wordProfileDao().insert(WordProfileEntity(name = "Default"))
+            setActiveProfile(nextId)
         }
-        storageFile.writeText(array.toString())
-        _wordsFlow.value = words
+    }
+
+    suspend fun renameProfile(id: Long, name: String) =
+        db.wordProfileDao().rename(id, name.trim())
+
+    // -------------------------------------------------------------------------
+    // Word management (scoped to active profile)
+    // -------------------------------------------------------------------------
+
+    suspend fun loadWords(): List<WordEntry> {
+        val profileId = _activeProfileId.value
+        if (profileId < 0L) return emptyList()
+        return db.wordEntryDao().getByProfile(profileId).map { it.toDomain() }
     }
 
     suspend fun addWord(entry: WordEntry) {
-        val current = _wordsFlow.value.toMutableList()
-        val alreadyExists = current.any {
-            it.text.equals(entry.text, ignoreCase = true)
-        }
-        if (!alreadyExists) {
-            current.add(entry)
-            saveWords(current)
+        val profileId = _activeProfileId.value
+        if (profileId < 0L) return
+        if (db.wordEntryDao().countByText(profileId, entry.text) == 0) {
+            db.wordEntryDao().insert(entry.toEntity(profileId))
         }
     }
 
     suspend fun removeWord(text: String) {
-        val current = _wordsFlow.value.toMutableList()
-        current.removeAll { it.text.equals(text, ignoreCase = true) }
-        saveWords(current)
+        val profileId = _activeProfileId.value
+        if (profileId < 0L) return
+        db.wordEntryDao().deleteByText(profileId, text)
     }
 
     suspend fun setWordEnabled(text: String, enabled: Boolean) {
-        val current = _wordsFlow.value.map { entry ->
-            if (entry.text.equals(text, ignoreCase = true)) entry.copy(enabled = enabled)
-            else entry
-        }
-        saveWords(current)
+        val profileId = _activeProfileId.value
+        if (profileId < 0L) return
+        db.wordEntryDao().setEnabled(profileId, text, enabled)
     }
 
     suspend fun updateColor(text: String, color: Int) {
-        val current = _wordsFlow.value.map { entry ->
-            if (entry.text.equals(text, ignoreCase = true)) entry.copy(color = color)
-            else entry
-        }
-        saveWords(current)
+        val profileId = _activeProfileId.value
+        if (profileId < 0L) return
+        db.wordEntryDao().updateColor(profileId, text, color)
     }
 
-    /**
-     * Parses a plain-text string of words separated by commas or newlines.
-     * Deduplicates case-insensitively and assigns default colors.
-     * Does NOT automatically persist — caller decides whether to save.
-     */
+    suspend fun saveWords(words: List<WordEntry>) {
+        val profileId = _activeProfileId.value
+        if (profileId < 0L) return
+        db.withTransaction {
+            db.wordEntryDao().deleteAllByProfile(profileId)
+            db.wordEntryDao().insertAll(words.map { it.toEntity(profileId) })
+        }
+    }
+
     fun importFromText(raw: String): List<WordEntry> {
         val seen = mutableSetOf<String>()
         return raw
@@ -132,25 +135,14 @@ class WordListRepository(private val storageFile: File) {
             }
     }
 
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
-
-    private fun parseJson(json: String): List<WordEntry> {
-        val array = JSONArray(json)
-        return (0 until array.length()).map { i ->
-            val obj = array.getJSONObject(i)
-            WordEntry(
-                text = obj.getString(KEY_TEXT),
-                color = obj.getInt(KEY_COLOR),
-                enabled = obj.getBoolean(KEY_ENABLED)
-            )
-        }
-    }
-
-    companion object {
-        private const val KEY_TEXT = "text"
-        private const val KEY_COLOR = "color"
-        private const val KEY_ENABLED = "enabled"
-    }
+    private val defaultColors = listOf(
+        0xFFE53935.toInt(),
+        0xFF1E88E5.toInt(),
+        0xFF43A047.toInt(),
+        0xFFFB8C00.toInt(),
+        0xFF8E24AA.toInt(),
+        0xFF00ACC1.toInt(),
+        0xFFFFB300.toInt(),
+        0xFF6D4C41.toInt()
+    )
 }

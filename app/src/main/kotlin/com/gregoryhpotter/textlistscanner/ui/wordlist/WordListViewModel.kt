@@ -3,18 +3,24 @@ package com.gregoryhpotter.textlistscanner.ui.wordlist
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gregoryhpotter.textlistscanner.data.model.WordEntry
+import com.gregoryhpotter.textlistscanner.data.model.WordProfile
 import com.gregoryhpotter.textlistscanner.data.repository.WordListRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class WordListUiState(
     val words: List<WordEntry> = emptyList(),
+    val searchQuery: String = "",
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val profiles: List<WordProfile> = emptyList(),
+    val activeProfileId: Long = -1L,
+    val pendingDelete: WordEntry? = null
 )
 
 @HiltViewModel
@@ -22,99 +28,109 @@ class WordListViewModel @Inject constructor(
     private val repository: WordListRepository
 ) : ViewModel() {
 
+    private val _searchQuery = MutableStateFlow("")
     private val _uiState = MutableStateFlow(WordListUiState())
     val uiState: StateFlow<WordListUiState> = _uiState.asStateFlow()
 
     init {
-        loadWords()
-    }
+        viewModelScope.launch { repository.ensureDefaultProfile() }
 
-    // -------------------------------------------------------------------------
-    // Load
-    // -------------------------------------------------------------------------
-
-    private fun loadWords() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            try {
-                val words = repository.loadWords()
-                _uiState.value = _uiState.value.copy(words = words, isLoading = false)
-            } catch (e: Exception) {
+            combine(repository.wordsFlow, _searchQuery) { words, query ->
+                if (query.isBlank()) words
+                else words.filter { it.text.contains(query, ignoreCase = true) }
+            }.collect { filtered ->
+                _uiState.value = _uiState.value.copy(words = filtered, isLoading = false)
+            }
+        }
+
+        viewModelScope.launch {
+            repository.profilesFlow.collect { profiles ->
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to load word list"
+                    profiles = profiles,
+                    activeProfileId = repository.activeProfileId
                 )
             }
         }
     }
 
     // -------------------------------------------------------------------------
-    // Add
+    // Search
+    // -------------------------------------------------------------------------
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+    }
+
+    // -------------------------------------------------------------------------
+    // Word management
     // -------------------------------------------------------------------------
 
     fun addWord(text: String, color: Int) {
         val trimmed = text.trim()
         if (trimmed.isBlank()) return
-
         viewModelScope.launch {
             repository.addWord(WordEntry(text = trimmed, color = color, enabled = true))
-            reload()
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Remove
-    // -------------------------------------------------------------------------
-
-    fun removeWord(text: String) {
-        viewModelScope.launch {
-            repository.removeWord(text)
-            reload()
-        }
+    fun removeWord(entry: WordEntry) {
+        _uiState.value = _uiState.value.copy(pendingDelete = entry)
+        viewModelScope.launch { repository.removeWord(entry.text) }
     }
 
-    // -------------------------------------------------------------------------
-    // Toggle enabled
-    // -------------------------------------------------------------------------
+    fun undoDelete() {
+        val entry = _uiState.value.pendingDelete ?: return
+        _uiState.value = _uiState.value.copy(pendingDelete = null)
+        viewModelScope.launch { repository.addWord(entry) }
+    }
+
+    fun confirmDelete() {
+        _uiState.value = _uiState.value.copy(pendingDelete = null)
+    }
 
     fun toggleWord(text: String) {
         val entry = _uiState.value.words.find { it.text == text } ?: return
-        viewModelScope.launch {
-            repository.setWordEnabled(text, !entry.enabled)
-            reload()
-        }
+        viewModelScope.launch { repository.setWordEnabled(text, !entry.enabled) }
     }
-
-    // -------------------------------------------------------------------------
-    // Update color
-    // -------------------------------------------------------------------------
 
     fun updateColor(text: String, color: Int) {
-        viewModelScope.launch {
-            repository.updateColor(text, color)
-            reload()
-        }
+        viewModelScope.launch { repository.updateColor(text, color) }
     }
-
-    // -------------------------------------------------------------------------
-    // Import
-    // -------------------------------------------------------------------------
 
     fun importFromText(raw: String) {
         if (raw.isBlank()) return
         viewModelScope.launch {
-            val imported = repository.importFromText(raw)
-            repository.saveWords(imported)
-            reload()
+            repository.saveWords(repository.importFromText(raw))
         }
     }
 
     // -------------------------------------------------------------------------
-    // Private helpers
+    // Profile management
     // -------------------------------------------------------------------------
 
-    private suspend fun reload() {
-        val words = repository.loadWords()
-        _uiState.value = _uiState.value.copy(words = words, isLoading = false)
+    fun switchProfile(id: Long) {
+        repository.setActiveProfile(id)
+        _uiState.value = _uiState.value.copy(activeProfileId = id)
+    }
+
+    fun createProfile(name: String) {
+        viewModelScope.launch {
+            val id = repository.createProfile(name)
+            repository.setActiveProfile(id)
+            _uiState.value = _uiState.value.copy(activeProfileId = id)
+        }
+    }
+
+    fun deleteProfile(id: Long) {
+        viewModelScope.launch {
+            repository.deleteProfile(id)
+            _uiState.value = _uiState.value.copy(activeProfileId = repository.activeProfileId)
+        }
+    }
+
+    fun renameProfile(id: Long, name: String) {
+        viewModelScope.launch { repository.renameProfile(id, name) }
     }
 }

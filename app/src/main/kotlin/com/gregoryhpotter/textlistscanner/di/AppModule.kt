@@ -2,7 +2,8 @@ package com.gregoryhpotter.textlistscanner.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.gregoryhpotter.textlistscanner.data.repository.WordListRepository
+import androidx.room.Room
+import com.gregoryhpotter.textlistscanner.data.db.AppDatabase
 import com.gregoryhpotter.textlistscanner.feedback.AndroidAudioFeedbackProvider
 import com.gregoryhpotter.textlistscanner.feedback.AndroidHapticFeedbackProvider
 import com.gregoryhpotter.textlistscanner.feedback.AudioFeedbackProvider
@@ -16,7 +17,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import java.io.File
 import javax.inject.Singleton
 
 @Module
@@ -38,13 +38,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideWordListFile(@ApplicationContext context: Context): File =
-        File(context.filesDir, "word_list.json")
-
-    @Provides
-    @Singleton
-    fun provideWordListRepository(storageFile: File): WordListRepository =
-        WordListRepository(storageFile)
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
+        Room.databaseBuilder(context, AppDatabase::class.java, "word_fido.db").build()
 
     @Provides
     @Singleton
