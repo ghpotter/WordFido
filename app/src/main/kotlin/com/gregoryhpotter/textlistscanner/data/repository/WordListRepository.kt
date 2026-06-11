@@ -79,7 +79,7 @@ class WordListRepository(private val storageFile: File) {
     }
 
     suspend fun addWord(entry: WordEntry) {
-        val current = loadWords().toMutableList()
+        val current = _wordsFlow.value.toMutableList()
         val alreadyExists = current.any {
             it.text.equals(entry.text, ignoreCase = true)
         }
@@ -90,29 +90,23 @@ class WordListRepository(private val storageFile: File) {
     }
 
     suspend fun removeWord(text: String) {
-        val current = loadWords().toMutableList()
+        val current = _wordsFlow.value.toMutableList()
         current.removeAll { it.text.equals(text, ignoreCase = true) }
         saveWords(current)
     }
 
     suspend fun setWordEnabled(text: String, enabled: Boolean) {
-        val current = loadWords().map { entry ->
-            if (entry.text.equals(text, ignoreCase = true)) {
-                entry.copy(enabled = enabled)
-            } else {
-                entry
-            }
+        val current = _wordsFlow.value.map { entry ->
+            if (entry.text.equals(text, ignoreCase = true)) entry.copy(enabled = enabled)
+            else entry
         }
         saveWords(current)
     }
 
     suspend fun updateColor(text: String, color: Int) {
-        val current = loadWords().map { entry ->
-            if (entry.text.equals(text, ignoreCase = true)) {
-                entry.copy(color = color)
-            } else {
-                entry
-            }
+        val current = _wordsFlow.value.map { entry ->
+            if (entry.text.equals(text, ignoreCase = true)) entry.copy(color = color)
+            else entry
         }
         saveWords(current)
     }
