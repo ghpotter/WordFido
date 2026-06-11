@@ -319,10 +319,7 @@ class CameraFragment : Fragment() {
 
         currentWords.forEach { word ->
             if (feedbackManager.onWordDetected(word) && state.hapticEnabled) {
-                binding.root.performHapticFeedback(
-                    HapticFeedbackConstants.KEYBOARD_TAP,
-                    HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
-                )
+                binding.root.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             }
         }
 
