@@ -29,11 +29,6 @@ class OverlayView @JvmOverloads constructor(
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = LABEL_TEXT_SIZE
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
-    }
-
     /**
      * Update the highlights and trigger a redraw.
      * Safe to call from any thread — posts invalidation to the UI thread.
@@ -59,7 +54,6 @@ class OverlayView @JvmOverloads constructor(
                     HighlightStyle.Marker -> drawMarker(canvas, highlight)
                 }
             }
-            drawLabel(canvas, highlight)
         }
     }
 
@@ -111,19 +105,10 @@ class OverlayView @JvmOverloads constructor(
         canvas.drawRoundRect(highlight.rect.toRectF(), CORNER_RADIUS, CORNER_RADIUS, paint)
     }
 
-    private fun drawLabel(canvas: Canvas, highlight: HighlightData) {
-        if (highlight.label.isBlank()) return
-        labelPaint.color = highlight.color
-        labelPaint.alpha = 220
-        canvas.drawText(highlight.label, highlight.rect.left, highlight.rect.top - LABEL_MARGIN, labelPaint)
-    }
-
     companion object {
         private const val STROKE_WIDTH = 4f
         private const val CORNER_RADIUS = 6f
         private const val MARKER_ALPHA = 80
-        private const val LABEL_TEXT_SIZE = 32f
-        private const val LABEL_MARGIN = 8f
     }
 }
 
@@ -132,12 +117,10 @@ class OverlayView @JvmOverloads constructor(
  *
  * @param rect   Bounding box in [OverlayView] coordinate space
  * @param color  ARGB color from the matching [WordEntry]
- * @param label  The matched word text (reserved for future label drawing)
  */
 data class HighlightData(
     val rect: MapperRect,
-    val color: Int,
-    val label: String
+    val color: Int
 )
 
 /**

@@ -151,12 +151,6 @@ class CameraFragment : Fragment() {
                     showAudioTonePicker()
                     true
                 }
-                R.id.action_visual -> {
-                    val newValue = !item.isChecked
-                    item.isChecked = newValue
-                    viewModel.setVisualEnabled(newValue)
-                    true
-                }
                 else -> false
             }
         }
@@ -170,7 +164,6 @@ class CameraFragment : Fragment() {
         menu.findItem(R.id.action_whole_word)?.isChecked = state.wholeWord
         menu.findItem(R.id.action_haptic)?.isChecked = state.hapticEnabled
         menu.findItem(R.id.action_audio)?.isChecked = state.audioEnabled
-        menu.findItem(R.id.action_visual)?.isChecked = state.visualEnabled
         menu.findItem(R.id.action_audio_sound)?.title =
             getString(R.string.audio_sound_label, getString(state.audioTone.labelResId))
     }
@@ -257,12 +250,6 @@ class CameraFragment : Fragment() {
 
 
     private fun updateOverlay(state: CameraUiState) {
-        if (!state.visualEnabled) {
-            binding.overlayView.clearHighlights()
-            stableHighlights = emptyMap()
-            return
-        }
-
         val previewWidth = binding.previewView.width
         val previewHeight = binding.previewView.height
         if (previewWidth == 0 || previewHeight == 0) return
@@ -291,7 +278,7 @@ class CameraFragment : Fragment() {
             )
             val paddingPx = 8 * resources.displayMetrics.density
             val padded = expandRect(mapped, paddingPx)
-            index to HighlightData(rect = padded, color = match.entry.color, label = match.entry.text)
+            index to HighlightData(rect = padded, color = match.entry.color)
         }.toMap()
 
         // Only update a word's box if it's new or has moved substantially

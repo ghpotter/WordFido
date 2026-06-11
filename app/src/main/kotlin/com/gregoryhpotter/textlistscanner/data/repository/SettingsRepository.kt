@@ -25,10 +25,6 @@ class SettingsRepository @Inject constructor(
         get() = prefs.getBoolean(KEY_AUDIO, DEFAULT_AUDIO)
         set(value) { prefs.edit().putBoolean(KEY_AUDIO, value).apply() }
 
-    var visualEnabled: Boolean
-        get() = prefs.getBoolean(KEY_VISUAL, DEFAULT_VISUAL)
-        set(value) { prefs.edit().putBoolean(KEY_VISUAL, value).apply() }
-
     var audioTone: AudioFeedbackTone
         get() {
             val name = prefs.getString(KEY_AUDIO_TONE, DEFAULT_AUDIO_TONE.name)
@@ -41,13 +37,11 @@ class SettingsRepository @Inject constructor(
         const val KEY_WHOLE_WORD = "whole_word"
         const val KEY_HAPTIC = "haptic_enabled"
         const val KEY_AUDIO = "audio_enabled"
-        const val KEY_VISUAL = "visual_enabled"
 
         const val DEFAULT_CASE_SENSITIVE = false
         const val DEFAULT_WHOLE_WORD = true
         const val DEFAULT_HAPTIC = true
         const val DEFAULT_AUDIO = true
-        const val DEFAULT_VISUAL = true
         const val KEY_AUDIO_TONE = "audio_tone"
         val DEFAULT_AUDIO_TONE = AudioFeedbackTone.Beep
     }

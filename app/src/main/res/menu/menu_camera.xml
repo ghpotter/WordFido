@@ -22,11 +22,6 @@
         android:title="Feedback"
         android:enabled="false" />
     <item
-        android:id="@+id/action_visual"
-        android:title="Visual highlights"
-        android:checkable="true"
-        android:checked="true" />
-    <item
         android:id="@+id/action_haptic"
         android:title="Haptic"
         android:checkable="true"

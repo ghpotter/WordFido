@@ -53,11 +53,6 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun `visualEnabled defaults to true`() {
-        assertTrue(repository.visualEnabled)
-    }
-
-    @Test
     fun `audioTone defaults to Beep`() {
         every { prefs.getString(SettingsRepository.KEY_AUDIO_TONE, any()) } returns AudioFeedbackTone.Beep.name
         assertEquals(AudioFeedbackTone.Beep, repository.audioTone)
@@ -91,12 +86,6 @@ class SettingsRepositoryTest {
         verify { prefs.getBoolean(SettingsRepository.KEY_AUDIO, any()) }
     }
 
-    @Test
-    fun `visualEnabled reads correct key`() {
-        repository.visualEnabled
-        verify { prefs.getBoolean(SettingsRepository.KEY_VISUAL, any()) }
-    }
-
     // -------------------------------------------------------------------------
     // Writes
     // -------------------------------------------------------------------------
@@ -126,13 +115,6 @@ class SettingsRepositoryTest {
     fun `setting audioEnabled writes correct key`() {
         repository.audioEnabled = false
         verify { editor.putBoolean(SettingsRepository.KEY_AUDIO, false) }
-        verify { editor.apply() }
-    }
-
-    @Test
-    fun `setting visualEnabled writes correct key`() {
-        repository.visualEnabled = false
-        verify { editor.putBoolean(SettingsRepository.KEY_VISUAL, false) }
         verify { editor.apply() }
     }
 
