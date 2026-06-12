@@ -18,7 +18,8 @@ class MlKitTextAnalyzer(
     private val wordListProvider: () -> List<WordEntry>,
     private var caseSensitive: Boolean = false,
     private var wholeWord: Boolean = false,
-    private val onDebug: ((String) -> Unit)? = null
+    private val onDebug: ((String) -> Unit)? = null,
+    private val throttle: FrameThrottle = FrameThrottle()
 ) : ImageAnalysis.Analyzer {
 
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -27,6 +28,11 @@ class MlKitTextAnalyzer(
     override fun analyze(imageProxy: ImageProxy) {
         val mediaImage = imageProxy.image
         if (mediaImage == null) {
+            imageProxy.close()
+            return
+        }
+
+        if (!throttle.shouldProcess()) {
             imageProxy.close()
             return
         }
