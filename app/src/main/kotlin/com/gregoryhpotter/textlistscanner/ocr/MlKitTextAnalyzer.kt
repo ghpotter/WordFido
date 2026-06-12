@@ -71,7 +71,8 @@ class MlKitTextAnalyzer(
                                             bottom = rect.bottom,
                                             cornerPoints = element.cornerPoints?.map { OcrPoint(it.x, it.y) } ?: emptyList()
                                         )
-                                    }
+                                    },
+                                    confidence = element.confidence
                                 )
                             }
                         )

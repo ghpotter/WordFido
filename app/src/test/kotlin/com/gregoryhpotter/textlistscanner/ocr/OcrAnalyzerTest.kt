@@ -261,6 +261,123 @@ class OcrAnalyzerTest {
         assertEquals(0xFF0000, result.first().entry.color)
     }
 
+    // -------------------------------------------------------------------------
+    // Confidence filtering
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `element above confidence threshold is reported`() {
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit",
+                    boundingBox = null,
+                    elements = listOf(OcrElement("exit", null, confidence = 0.8f))
+                )
+            ),
+            wordList = wordList
+        )
+
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `element below confidence threshold is dropped`() {
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit",
+                    boundingBox = null,
+                    elements = listOf(OcrElement("exit", null, confidence = 0.3f))
+                )
+            ),
+            wordList = wordList
+        )
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `element at exactly the confidence threshold is reported`() {
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit",
+                    boundingBox = null,
+                    elements = listOf(OcrElement("exit", null, confidence = OcrResultProcessor.MIN_CONFIDENCE))
+                )
+            ),
+            wordList = wordList
+        )
+
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `element with null confidence is reported`() {
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit",
+                    boundingBox = null,
+                    elements = listOf(OcrElement("exit", null, confidence = null))
+                )
+            ),
+            wordList = wordList
+        )
+
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `only high-confidence elements reported when line has mixed confidence`() {
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit exit",
+                    boundingBox = null,
+                    elements = listOf(
+                        OcrElement("exit", null, confidence = 0.9f),
+                        OcrElement("exit", null, confidence = 0.2f)
+                    )
+                )
+            ),
+            wordList = wordList
+        )
+
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `match with no elements falls through to line bounding box without confidence check`() {
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val lineBox = OcrBoundingBox(0, 0, 100, 20)
+        val result = processor.process(
+            lines = listOf(OcrLine("exit", boundingBox = lineBox, elements = emptyList())),
+            wordList = wordList
+        )
+
+        assertEquals(1, result.size)
+        assertEquals(lineBox, result.first().boundingBox)
+    }
+
     @Test
     fun `matched result carries the source line text`() {
         val wordList = listOf(WordEntry("exit", 0xFF0000, true))

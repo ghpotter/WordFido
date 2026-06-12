@@ -23,7 +23,9 @@ data class CameraUiState(
     // Feedback settings
     val hapticEnabled: Boolean = true,
     val audioEnabled: Boolean = true,
-    val audioTone: AudioFeedbackTone = AudioFeedbackTone.Beep
+    val audioTone: AudioFeedbackTone = AudioFeedbackTone.Beep,
+    // Display settings
+    val zoomBarVisible: Boolean = false
 )
 
 @HiltViewModel
@@ -38,11 +40,12 @@ class CameraViewModel @Inject constructor(
     init {
         observeWordList()
         _uiState.value = _uiState.value.copy(
-            caseSensitive = settingsRepository.caseSensitive,
-            wholeWord     = settingsRepository.wholeWord,
-            hapticEnabled = settingsRepository.hapticEnabled,
-            audioEnabled  = settingsRepository.audioEnabled,
-            audioTone     = settingsRepository.audioTone
+            caseSensitive  = settingsRepository.caseSensitive,
+            wholeWord      = settingsRepository.wholeWord,
+            hapticEnabled  = settingsRepository.hapticEnabled,
+            audioEnabled   = settingsRepository.audioEnabled,
+            audioTone      = settingsRepository.audioTone,
+            zoomBarVisible = settingsRepository.zoomBarVisible
         )
     }
 
@@ -98,5 +101,14 @@ class CameraViewModel @Inject constructor(
     fun setAudioTone(tone: AudioFeedbackTone) {
         settingsRepository.audioTone = tone
         _uiState.value = _uiState.value.copy(audioTone = tone)
+    }
+
+    // -------------------------------------------------------------------------
+    // Display settings
+    // -------------------------------------------------------------------------
+
+    fun setZoomBarVisible(value: Boolean) {
+        settingsRepository.zoomBarVisible = value
+        _uiState.value = _uiState.value.copy(zoomBarVisible = value)
     }
 }

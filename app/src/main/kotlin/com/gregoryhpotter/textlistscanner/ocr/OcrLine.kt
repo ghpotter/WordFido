@@ -25,7 +25,8 @@ data class OcrBoundingBox(
  */
 data class OcrElement(
         val text: String,
-        val boundingBox: OcrBoundingBox?
+        val boundingBox: OcrBoundingBox?,
+        val confidence: Float? = null
 )
 
 /**

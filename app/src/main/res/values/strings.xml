@@ -17,4 +17,5 @@
     <string name="delete_list_title">Delete list?</string>
     <string name="delete_list_message">"%1$s" and all its words will be deleted.</string>
     <string name="rename_list_title">Rename list</string>
+    <string name="zoom_bar">Zoom bar</string>
 </resources>

@@ -53,16 +53,18 @@ class OcrResultProcessor @Inject constructor(
                 }
 
                 if (matchingElements.isNotEmpty()) {
-                    matchingElements.forEach { element ->
-                        results.add(
-                            OcrMatch(
-                                entry = entry,
-                                sourceLine = line.text,
-                                boundingBox = element.boundingBox?.withFallbackCornerPoints(line.boundingBox)
-                                    ?: line.boundingBox
+                    matchingElements
+                        .filter { it.confidence == null || it.confidence >= MIN_CONFIDENCE }
+                        .forEach { element ->
+                            results.add(
+                                OcrMatch(
+                                    entry = entry,
+                                    sourceLine = line.text,
+                                    boundingBox = element.boundingBox?.withFallbackCornerPoints(line.boundingBox)
+                                        ?: line.boundingBox
+                                )
                             )
-                        )
-                    }
+                        }
                 } else {
                     results.add(
                         OcrMatch(
@@ -76,6 +78,10 @@ class OcrResultProcessor @Inject constructor(
         }
 
         return results
+    }
+
+    companion object {
+        const val MIN_CONFIDENCE = 0.5f
     }
 
     private fun OcrBoundingBox.withFallbackCornerPoints(fallback: OcrBoundingBox?): OcrBoundingBox {
