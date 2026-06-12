@@ -194,6 +194,16 @@ class WordListFragment : Fragment() {
                     binding.progressBar.visibility =
                         if (state.isLoading) View.VISIBLE else View.GONE
 
+                    val showEmpty = !state.isLoading && state.words.isEmpty()
+                    binding.emptyState.visibility = if (showEmpty) View.VISIBLE else View.GONE
+                    binding.recyclerWords.visibility = if (showEmpty) View.GONE else View.VISIBLE
+                    if (showEmpty) {
+                        binding.emptyState.setText(
+                            if (state.searchQuery.isBlank()) R.string.empty_state_no_words
+                            else R.string.empty_state_no_results
+                        )
+                    }
+
                     updateProfileSpinner(state.profiles, state.activeProfileId)
                     binding.buttonDeleteProfile.isEnabled = state.profiles.size > 1
                 }
