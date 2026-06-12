@@ -277,6 +277,42 @@ class WordListViewModelTest {
     }
 
     // -------------------------------------------------------------------------
+    // Export
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `buildExportText returns words one per line`() = runTest {
+        wordsFlow.value = listOf(
+            WordEntry("exit", 0xFF0000, true),
+            WordEntry("door", 0x00FF00, true)
+        )
+        advanceUntilIdle()
+
+        assertEquals("exit\ndoor", viewModel.buildExportText())
+    }
+
+    @Test
+    fun `buildExportText returns empty string when no words`() = runTest {
+        advanceUntilIdle()
+        assertEquals("", viewModel.buildExportText())
+    }
+
+    @Test
+    fun `buildExportText returns full list regardless of active search query`() = runTest {
+        wordsFlow.value = listOf(
+            WordEntry("exit", 0xFF0000, true),
+            WordEntry("door", 0x00FF00, true)
+        )
+        advanceUntilIdle()
+        viewModel.setSearchQuery("exit")
+        advanceUntilIdle()
+
+        // uiState.words is filtered, but export should contain both
+        assertEquals(1, viewModel.uiState.value.words.size)
+        assertEquals("exit\ndoor", viewModel.buildExportText())
+    }
+
+    // -------------------------------------------------------------------------
     // Profiles flow observation
     // -------------------------------------------------------------------------
 

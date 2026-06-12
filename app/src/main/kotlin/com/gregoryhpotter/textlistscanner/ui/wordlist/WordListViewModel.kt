@@ -32,11 +32,14 @@ class WordListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(WordListUiState())
     val uiState: StateFlow<WordListUiState> = _uiState.asStateFlow()
 
+    private var allWords: List<WordEntry> = emptyList()
+
     init {
         viewModelScope.launch { repository.ensureDefaultProfile() }
 
         viewModelScope.launch {
             combine(repository.wordsFlow, _searchQuery) { words, query ->
+                allWords = words
                 if (query.isBlank()) words
                 else words.filter { it.text.contains(query, ignoreCase = true) }
             }.collect { filtered ->
@@ -133,4 +136,10 @@ class WordListViewModel @Inject constructor(
     fun renameProfile(id: Long, name: String) {
         viewModelScope.launch { repository.renameProfile(id, name) }
     }
+
+    // -------------------------------------------------------------------------
+    // Export
+    // -------------------------------------------------------------------------
+
+    fun buildExportText(): String = allWords.joinToString("\n") { it.text }
 }

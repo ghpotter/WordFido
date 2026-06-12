@@ -3,6 +3,7 @@ package com.gregoryhpotter.textlistscanner.ui.wordlist
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.GradientDrawable
+import android.widget.Toast
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -81,6 +82,7 @@ class WordListFragment : Fragment() {
         setupRecyclerView()
         setupAddWord()
         setupImport()
+        setupExport()
         setupSearch()
         setupProfileSpinner()
         observeUiState()
@@ -132,6 +134,21 @@ class WordListFragment : Fragment() {
                 addCategory(Intent.CATEGORY_OPENABLE)
             }
             importFileLauncher.launch(intent)
+        }
+    }
+
+    private fun setupExport() {
+        binding.buttonExport.setOnClickListener {
+            val text = viewModel.buildExportText()
+            if (text.isBlank()) {
+                Toast.makeText(requireContext(), R.string.export_empty, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+            startActivity(Intent.createChooser(intent, getString(R.string.export_chooser_title)))
         }
     }
 
