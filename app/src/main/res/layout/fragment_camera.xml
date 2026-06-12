@@ -93,7 +93,7 @@
 
     </LinearLayout>
 
-    <!-- Torch toggle FAB — bottom center -->
+    <!-- Torch toggle FAB — bottom right -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_torch"
         android:layout_width="wrap_content"
@@ -103,18 +103,7 @@
         android:src="@drawable/ic_torch"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Word list FAB — bottom right -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_word_list"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:contentDescription="Edit word list"
-        android:src="@android:drawable/ic_menu_edit"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

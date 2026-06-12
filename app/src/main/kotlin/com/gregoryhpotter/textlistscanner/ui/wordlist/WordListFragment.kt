@@ -1,6 +1,7 @@
 package com.gregoryhpotter.textlistscanner.ui.wordlist
 
 import android.app.Activity
+import android.view.inputmethod.EditorInfo
 import android.content.Intent
 import android.graphics.drawable.GradientDrawable
 import android.widget.Toast
@@ -117,13 +118,18 @@ class WordListFragment : Fragment() {
     }
 
     private fun setupAddWord() {
-        binding.buttonAdd.setOnClickListener {
-            val text = binding.editWordInput.text?.toString() ?: return@setOnClickListener
-            if (text.isBlank()) return@setOnClickListener
+        fun addWord() {
+            val text = binding.editWordInput.text?.toString() ?: return
+            if (text.isBlank()) return
             val color = ColorPalette.colors[nextColorIndex % ColorPalette.colors.size]
             nextColorIndex++
             viewModel.addWord(text, color)
             binding.editWordInput.text?.clear()
+        }
+
+        binding.inputLayout.setEndIconOnClickListener { addWord() }
+        binding.editWordInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { addWord(); true } else false
         }
     }
 
@@ -153,6 +159,17 @@ class WordListFragment : Fragment() {
     }
 
     private fun setupSearch() {
+        binding.buttonSearchToggle.setOnClickListener {
+            val opening = binding.searchLayout.visibility != View.VISIBLE
+            binding.searchLayout.visibility = if (opening) View.VISIBLE else View.GONE
+            if (opening) {
+                binding.editSearch.requestFocus()
+            } else {
+                binding.editSearch.text?.clear()
+                viewModel.setSearchQuery("")
+            }
+        }
+
         binding.editSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
