@@ -1,6 +1,7 @@
 package com.gregoryhpotter.textlistscanner.ui.camera
 
 import android.Manifest
+import android.content.res.ColorStateList
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -51,6 +53,8 @@ class CameraFragment : Fragment() {
     private var textAnalyzer: MlKitTextAnalyzer? = null
     private var previousMatchedWords: Set<String> = emptySet()
     private var stableHighlights: Map<Int, HighlightData> = emptyMap()
+    private var camera: Camera? = null
+    private var torchController: TorchController? = null
 
     // -------------------------------------------------------------------------
     // Permission handling
@@ -99,6 +103,9 @@ class CameraFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        torchController?.release()
+        torchController = null
+        camera = null
         textAnalyzer?.shutdown()
         cameraExecutor.shutdown()
         _binding = null
@@ -217,15 +224,27 @@ class CameraFragment : Fragment() {
 
         try {
             cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
+            camera = cameraProvider.bindToLifecycle(
                 viewLifecycleOwner,
                 CameraSelector.DEFAULT_BACK_CAMERA,
                 preview,
                 imageAnalysis
             )
+            setupTorchButton()
         } catch (e: Exception) {
             Toast.makeText(requireContext(),
                 "Failed to start camera", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setupTorchButton() {
+        val c = camera ?: return
+        val controller = TorchController(c.cameraInfo, c.cameraControl).also { torchController = it }
+        binding.fabTorch.visibility = if (controller.hasFlash) View.VISIBLE else View.GONE
+        binding.fabTorch.setOnClickListener {
+            controller.toggle()
+            binding.fabTorch.backgroundTintList =
+                if (controller.enabled) ColorStateList.valueOf(0xFFFFC107.toInt()) else null
         }
     }
 

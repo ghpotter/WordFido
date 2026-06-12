@@ -5,6 +5,10 @@
     <string name="audio_tone_prompt">Prompt</string>
     <string name="audio_tone_ack">Ack</string>
     <string name="audio_sound_label">Audio sound: %1$s</string>
+    <string name="import_from_file">Import from file</string>
+    <string name="export_words">Export</string>
+    <string name="export_chooser_title">Share word list</string>
+    <string name="export_empty">No words to export</string>
     <string name="hint_search">Search words</string>
     <string name="word_deleted">Word removed</string>
     <string name="undo">Undo</string>
