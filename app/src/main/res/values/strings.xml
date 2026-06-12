@@ -18,4 +18,6 @@
     <string name="delete_list_message">"%1$s" and all its words will be deleted.</string>
     <string name="rename_list_title">Rename list</string>
     <string name="zoom_bar">Zoom bar</string>
+    <string name="empty_state_no_words">No words yet.\nType a word above and tap Add to get started.</string>
+    <string name="empty_state_no_results">No words match your search.</string>
 </resources>
