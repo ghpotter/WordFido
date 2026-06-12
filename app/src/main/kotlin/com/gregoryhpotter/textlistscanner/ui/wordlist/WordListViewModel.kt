@@ -17,7 +17,6 @@ data class WordListUiState(
     val words: List<WordEntry> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = true,
-    val error: String? = null,
     val profiles: List<WordProfile> = emptyList(),
     val activeProfileId: Long = -1L,
     val pendingDelete: WordEntry? = null
