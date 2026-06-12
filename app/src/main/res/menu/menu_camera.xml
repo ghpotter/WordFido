@@ -36,4 +36,14 @@
         android:title="Audio sound"
         android:checkable="false" />
 
+    <item
+        android:id="@+id/action_header_display"
+        android:title="Display"
+        android:enabled="false" />
+    <item
+        android:id="@+id/action_zoom_bar"
+        android:title="@string/zoom_bar"
+        android:checkable="true"
+        android:checked="false" />
+
 </menu>

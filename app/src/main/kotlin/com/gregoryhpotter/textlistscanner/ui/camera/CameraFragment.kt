@@ -3,6 +3,8 @@ package com.gregoryhpotter.textlistscanner.ui.camera
 import android.Manifest
 import android.content.res.ColorStateList
 import android.content.pm.PackageManager
+import android.view.ScaleGestureDetector
+import android.widget.SeekBar
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -158,6 +160,12 @@ class CameraFragment : Fragment() {
                     showAudioTonePicker()
                     true
                 }
+                R.id.action_zoom_bar -> {
+                    val newValue = !item.isChecked
+                    item.isChecked = newValue
+                    viewModel.setZoomBarVisible(newValue)
+                    true
+                }
                 else -> false
             }
         }
@@ -173,6 +181,7 @@ class CameraFragment : Fragment() {
         menu.findItem(R.id.action_audio)?.isChecked = state.audioEnabled
         menu.findItem(R.id.action_audio_sound)?.title =
             getString(R.string.audio_sound_label, getString(state.audioTone.labelResId))
+        menu.findItem(R.id.action_zoom_bar)?.isChecked = state.zoomBarVisible
     }
 
     private fun showAudioTonePicker() {
@@ -231,9 +240,59 @@ class CameraFragment : Fragment() {
                 imageAnalysis
             )
             setupTorchButton()
+            setupPinchToZoom()
+            setupZoomBar()
         } catch (e: Exception) {
             Toast.makeText(requireContext(),
                 "Failed to start camera", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setupPinchToZoom() {
+        val cam = camera ?: return
+        val scaleDetector = ScaleGestureDetector(requireContext(),
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    val state = cam.cameraInfo.zoomState.value ?: return false
+                    val newRatio = (state.zoomRatio * detector.scaleFactor)
+                        .coerceIn(state.minZoomRatio, state.maxZoomRatio)
+                    cam.cameraControl.setZoomRatio(newRatio)
+                    return true
+                }
+            }
+        )
+        binding.previewView.setOnTouchListener { _, event ->
+            scaleDetector.onTouchEvent(event)
+            true
+        }
+    }
+
+    private fun setupZoomBar() {
+        val cam = camera ?: return
+
+        cam.cameraInfo.zoomState.observe(viewLifecycleOwner) { state ->
+            val progress = (state.linearZoom * 100).toInt()
+            if (binding.seekZoom.progress != progress) {
+                binding.seekZoom.progress = progress
+            }
+        }
+
+        binding.seekZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) cam.cameraControl.setLinearZoom(progress / 100f)
+            }
+            override fun onStartTrackingTouch(bar: SeekBar) {}
+            override fun onStopTrackingTouch(bar: SeekBar) {}
+        })
+
+        binding.buttonZoomIn.setOnClickListener {
+            val linear = cam.cameraInfo.zoomState.value?.linearZoom ?: 0f
+            cam.cameraControl.setLinearZoom((linear + ZOOM_STEP).coerceAtMost(1f))
+        }
+
+        binding.buttonZoomOut.setOnClickListener {
+            val linear = cam.cameraInfo.zoomState.value?.linearZoom ?: 0f
+            cam.cameraControl.setLinearZoom((linear - ZOOM_STEP).coerceAtLeast(0f))
         }
     }
 
@@ -262,6 +321,8 @@ class CameraFragment : Fragment() {
                         caseSensitive = state.caseSensitive,
                         wholeWord = state.wholeWord
                     )
+                    binding.zoomBarContainer.visibility =
+                        if (state.zoomBarVisible) View.VISIBLE else View.GONE
                 }
             }
         }
@@ -372,4 +433,8 @@ class CameraFragment : Fragment() {
     private fun hasCameraPermission() = ContextCompat.checkSelfPermission(
         requireContext(), Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED
+
+    companion object {
+        private const val ZOOM_STEP = 0.1f
+    }
 }

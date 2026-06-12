@@ -47,6 +47,7 @@ class CameraViewModelTest {
         every { settingsRepository.hapticEnabled } returns true
         every { settingsRepository.audioEnabled } returns true
         every { settingsRepository.audioTone } returns AudioFeedbackTone.Beep
+        every { settingsRepository.zoomBarVisible } returns false
 
         viewModel = CameraViewModel(wordListRepository, settingsRepository)
     }
@@ -254,6 +255,42 @@ class CameraViewModelTest {
     fun `setAudioEnabled persists to settings`() = runTest {
         viewModel.setAudioEnabled(false)
         verify { settingsRepository.audioEnabled = false }
+    }
+
+    // -------------------------------------------------------------------------
+    // Zoom bar
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `default zoom bar visible is false`() = runTest {
+        assertFalse(viewModel.uiState.value.zoomBarVisible)
+    }
+
+    @Test
+    fun `init loads zoomBarVisible from settings`() = runTest {
+        every { settingsRepository.zoomBarVisible } returns true
+        viewModel = CameraViewModel(wordListRepository, settingsRepository)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.zoomBarVisible)
+    }
+
+    @Test
+    fun `setZoomBarVisible updates state`() = runTest {
+        viewModel.setZoomBarVisible(true)
+        assertTrue(viewModel.uiState.value.zoomBarVisible)
+    }
+
+    @Test
+    fun `setZoomBarVisible can be toggled back`() = runTest {
+        viewModel.setZoomBarVisible(true)
+        viewModel.setZoomBarVisible(false)
+        assertFalse(viewModel.uiState.value.zoomBarVisible)
+    }
+
+    @Test
+    fun `setZoomBarVisible persists to settings`() = runTest {
+        viewModel.setZoomBarVisible(true)
+        verify { settingsRepository.zoomBarVisible = true }
     }
 
 }

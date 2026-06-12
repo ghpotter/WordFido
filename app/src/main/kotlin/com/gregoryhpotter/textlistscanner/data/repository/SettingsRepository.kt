@@ -29,6 +29,10 @@ class SettingsRepository @Inject constructor(
         get() = prefs.getLong(KEY_ACTIVE_PROFILE, -1L)
         set(value) { prefs.edit().putLong(KEY_ACTIVE_PROFILE, value).apply() }
 
+    var zoomBarVisible: Boolean
+        get() = prefs.getBoolean(KEY_ZOOM_BAR, DEFAULT_ZOOM_BAR)
+        set(value) { prefs.edit().putBoolean(KEY_ZOOM_BAR, value).apply() }
+
     var audioTone: AudioFeedbackTone
         get() {
             val name = prefs.getString(KEY_AUDIO_TONE, DEFAULT_AUDIO_TONE.name)
@@ -49,5 +53,7 @@ class SettingsRepository @Inject constructor(
         const val DEFAULT_AUDIO = true
         const val KEY_AUDIO_TONE = "audio_tone"
         val DEFAULT_AUDIO_TONE = AudioFeedbackTone.Beep
+        const val KEY_ZOOM_BAR = "zoom_bar_visible"
+        const val DEFAULT_ZOOM_BAR = false
     }
 }

@@ -150,6 +150,28 @@ class SettingsRepositoryTest {
     }
 
     // -------------------------------------------------------------------------
+    // zoomBarVisible
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `zoomBarVisible defaults to false`() {
+        assertFalse(repository.zoomBarVisible)
+    }
+
+    @Test
+    fun `zoomBarVisible reads correct key`() {
+        repository.zoomBarVisible
+        verify { prefs.getBoolean(SettingsRepository.KEY_ZOOM_BAR, any()) }
+    }
+
+    @Test
+    fun `setting zoomBarVisible writes correct key`() {
+        repository.zoomBarVisible = true
+        verify { editor.putBoolean(SettingsRepository.KEY_ZOOM_BAR, true) }
+        verify { editor.apply() }
+    }
+
+    // -------------------------------------------------------------------------
     // audioTone fallback
     // -------------------------------------------------------------------------
 

@@ -48,21 +48,29 @@ class OcrResultProcessor @Inject constructor(
                     it.text.equals(matchedText, ignoreCase = !caseSensitive)
                 }
 
+                val strippedMatch = matchedText.stripPunctuation()
                 val matchingElements = line.elements.filter { element ->
-                    element.text.stripPunctuation().equals(matchedText.stripPunctuation(), ignoreCase = !caseSensitive)
+                    val strippedElement = element.text.stripPunctuation()
+                    if (wholeWord) {
+                        strippedElement.equals(strippedMatch, ignoreCase = !caseSensitive)
+                    } else {
+                        strippedElement.contains(strippedMatch, ignoreCase = !caseSensitive)
+                    }
                 }
 
                 if (matchingElements.isNotEmpty()) {
-                    matchingElements.forEach { element ->
-                        results.add(
-                            OcrMatch(
-                                entry = entry,
-                                sourceLine = line.text,
-                                boundingBox = element.boundingBox?.withFallbackCornerPoints(line.boundingBox)
-                                    ?: line.boundingBox
+                    matchingElements
+                        .filter { it.confidence == null || it.confidence >= MIN_CONFIDENCE }
+                        .forEach { element ->
+                            results.add(
+                                OcrMatch(
+                                    entry = entry,
+                                    sourceLine = line.text,
+                                    boundingBox = element.boundingBox?.withFallbackCornerPoints(line.boundingBox)
+                                        ?: line.boundingBox
+                                )
                             )
-                        )
-                    }
+                        }
                 } else {
                     results.add(
                         OcrMatch(
@@ -76,6 +84,10 @@ class OcrResultProcessor @Inject constructor(
         }
 
         return results
+    }
+
+    companion object {
+        const val MIN_CONFIDENCE = 0.5f
     }
 
     private fun OcrBoundingBox.withFallbackCornerPoints(fallback: OcrBoundingBox?): OcrBoundingBox {
