@@ -1,5 +1,4 @@
 # WordFido
-gi
 An Android app that uses your camera to scan for words in real time. Build a watchlist of words, point the camera at text, and WordFido highlights every match as it appears.
 
 ---
@@ -45,15 +44,9 @@ An Android app that uses your camera to scan for words in real time. Build a wat
 
 ## Screenshots
 
-Wordlist screen:
-
 ![Phone screenshot of the app's word list screen.](.github/images/wordlist.png)
 
-Example of searching Github's home page for "agent":
-
 ![Phone screenshot of Github's home page with the word agents highlighted.](.github/images/github.png)
-
-Example of searching an ingredient list for mulitple words, at an angle:
 
 ![Phone screenshot of a product's ingredient list with multiple words highlighted in different colors.](.github/images/ingredients.png)
 
