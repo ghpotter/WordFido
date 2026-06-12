@@ -63,6 +63,42 @@ class WordMatcherTest {
         assertTrue(result.contains("exit"))
     }
 
+    @Test
+    fun `word wrapped in curly double quotes matches target`() {
+        val result = matcher.findMatches(
+            text = "“exit”",
+            wordList = listOf("exit")
+        )
+        assertTrue(result.contains("exit"))
+    }
+
+    @Test
+    fun `word wrapped in curly single quotes matches target`() {
+        val result = matcher.findMatches(
+            text = "‘exit’",
+            wordList = listOf("exit")
+        )
+        assertTrue(result.contains("exit"))
+    }
+
+    @Test
+    fun `multiple consecutive trailing punctuation is stripped`() {
+        val result = matcher.findMatches(
+            text = "exit...",
+            wordList = listOf("exit")
+        )
+        assertTrue(result.contains("exit"))
+    }
+
+    @Test
+    fun `multiple consecutive leading punctuation is stripped`() {
+        val result = matcher.findMatches(
+            text = "\"'exit",
+            wordList = listOf("exit")
+        )
+        assertTrue(result.contains("exit"))
+    }
+
     // -------------------------------------------------------------------------
     // Case sensitivity — OFF (default, case-insensitive)
     // -------------------------------------------------------------------------
@@ -313,5 +349,39 @@ class WordMatcherTest {
             wordList = listOf("exit", "exit")
         )
         assertEquals(1, result.size)
+    }
+
+    // -------------------------------------------------------------------------
+    // Compound words (internal hyphen preservation)
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `compound word with internal hyphen matches exactly`() {
+        val result = matcher.findMatches(
+            text = "mother-in-law",
+            wordList = listOf("mother-in-law"),
+            wholeWord = true
+        )
+        assertTrue(result.contains("mother-in-law"))
+    }
+
+    @Test
+    fun `internal hyphen is not stripped with trailing punctuation present`() {
+        val result = matcher.findMatches(
+            text = "mother-in-law.",
+            wordList = listOf("mother-in-law"),
+            wholeWord = true
+        )
+        assertTrue(result.contains("mother-in-law"))
+    }
+
+    @Test
+    fun `compound word does not match a non-compound target`() {
+        val result = matcher.findMatches(
+            text = "mother-in-law",
+            wordList = listOf("mother"),
+            wholeWord = true
+        )
+        assertFalse(result.contains("mother"))
     }
 }

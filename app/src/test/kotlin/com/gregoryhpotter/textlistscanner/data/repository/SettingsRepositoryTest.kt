@@ -20,10 +20,12 @@ class SettingsRepositoryTest {
         editor = mockk(relaxed = true) {
             every { putBoolean(any(), any()) } returns this@mockk
             every { putString(any(), any()) } returns this@mockk
+            every { putLong(any(), any()) } returns this@mockk
         }
         prefs = mockk {
             every { edit() } returns editor
             every { getBoolean(any(), any()) } answers { secondArg() }
+            every { getLong(any(), any()) } answers { secondArg() }
         }
         repository = SettingsRepository(prefs)
     }
@@ -123,5 +125,43 @@ class SettingsRepositoryTest {
         repository.audioTone = AudioFeedbackTone.Beep
         verify { editor.putString(SettingsRepository.KEY_AUDIO_TONE, "Beep") }
         verify { editor.apply() }
+    }
+
+    // -------------------------------------------------------------------------
+    // activeProfileId
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `activeProfileId defaults to minus one`() {
+        assertEquals(-1L, repository.activeProfileId)
+    }
+
+    @Test
+    fun `activeProfileId reads correct key`() {
+        repository.activeProfileId
+        verify { prefs.getLong(SettingsRepository.KEY_ACTIVE_PROFILE, any()) }
+    }
+
+    @Test
+    fun `setting activeProfileId writes correct key`() {
+        repository.activeProfileId = 42L
+        verify { editor.putLong(SettingsRepository.KEY_ACTIVE_PROFILE, 42L) }
+        verify { editor.apply() }
+    }
+
+    // -------------------------------------------------------------------------
+    // audioTone fallback
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `audioTone falls back to Beep when stored name is unknown`() {
+        every { prefs.getString(SettingsRepository.KEY_AUDIO_TONE, any()) } returns "UnknownTone"
+        assertEquals(AudioFeedbackTone.Beep, repository.audioTone)
+    }
+
+    @Test
+    fun `audioTone falls back to Beep when stored value is null`() {
+        every { prefs.getString(SettingsRepository.KEY_AUDIO_TONE, any()) } returns null
+        assertEquals(AudioFeedbackTone.Beep, repository.audioTone)
     }
 }

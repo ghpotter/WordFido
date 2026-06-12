@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.gregoryhpotter.textlistscanner.data.db.AppDatabase
 import com.gregoryhpotter.textlistscanner.data.model.WordEntry
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -218,5 +219,74 @@ class WordListRepositoryTest {
 
         // active profile switched away; no "temp" word in new active profile
         assertFalse(repository.loadWords().any { it.text == "temp" })
+    }
+
+    // -------------------------------------------------------------------------
+    // ensureDefaultProfile idempotency
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `ensureDefaultProfile called twice does not create duplicate profiles`() = runBlocking {
+        repository.ensureDefaultProfile() // second call after setUp
+        assertEquals(1, db.wordProfileDao().count())
+    }
+
+    @Test
+    fun `ensureDefaultProfile does not change active profile when one already exists`() = runBlocking {
+        val idBefore = repository.activeProfileId
+        repository.ensureDefaultProfile()
+        assertEquals(idBefore, repository.activeProfileId)
+    }
+
+    // -------------------------------------------------------------------------
+    // renameProfile
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `renameProfile changes the stored name`() = runBlocking {
+        val id = repository.createProfile("Original")
+        repository.renameProfile(id, "Renamed")
+        val profile = db.wordProfileDao().getAll().first { it.id == id }
+        assertEquals("Renamed", profile.name)
+    }
+
+    @Test
+    fun `renameProfile trims whitespace`() = runBlocking {
+        val id = repository.createProfile("Work")
+        repository.renameProfile(id, "  Work Updated  ")
+        val profile = db.wordProfileDao().getAll().first { it.id == id }
+        assertEquals("Work Updated", profile.name)
+    }
+
+    // -------------------------------------------------------------------------
+    // createProfile
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `createProfile returns a positive id`() = runBlocking {
+        val id = repository.createProfile("Work")
+        assertTrue(id > 0L)
+    }
+
+    @Test
+    fun `createProfile trims whitespace from name`() = runBlocking {
+        val id = repository.createProfile("  Work  ")
+        val profile = db.wordProfileDao().getAll().first { it.id == id }
+        assertEquals("Work", profile.name)
+    }
+
+    @Test
+    fun `wordsFlow emits updated list after addWord`() = runBlocking {
+        repository.addWord(WordEntry("exit", 0xFF0000, true))
+        val words = repository.wordsFlow.first()
+        assertEquals(listOf("exit"), words.map { it.text })
+    }
+
+    @Test
+    fun `profilesFlow emits after createProfile`() = runBlocking {
+        val countBefore = repository.profilesFlow.first().size
+        repository.createProfile("Extra")
+        val countAfter = repository.profilesFlow.first().size
+        assertEquals(countBefore + 1, countAfter)
     }
 }
