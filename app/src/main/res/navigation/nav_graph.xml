@@ -8,11 +8,7 @@
     <fragment
         android:id="@+id/cameraFragment"
         android:name="com.gregoryhpotter.textlistscanner.ui.camera.CameraFragment"
-        android:label="Camera">
-        <action
-            android:id="@+id/action_camera_to_wordlist"
-            app:destination="@id/wordListFragment" />
-    </fragment>
+        android:label="Camera" />
 
     <fragment
         android:id="@+id/wordListFragment"

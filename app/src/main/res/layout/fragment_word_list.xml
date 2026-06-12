@@ -91,9 +91,12 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:hint="Add a word"
+        app:endIconMode="custom"
+        app:endIconDrawable="@drawable/ic_add"
+        app:endIconContentDescription="Add word"
         app:layout_constraintTop_toBottomOf="@id/profile_name_container"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/button_add">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edit_word_input"
@@ -104,16 +107,6 @@
             android:maxLines="1" />
 
     </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_add"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="Add"
-        app:layout_constraintTop_toTopOf="@id/input_layout"
-        app:layout_constraintBottom_toBottomOf="@id/input_layout"
-        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Import / Export row -->
     <com.google.android.material.button.MaterialButton
@@ -137,7 +130,21 @@
         app:layout_constraintBottom_toBottomOf="@id/button_import"
         app:layout_constraintStart_toEndOf="@id/button_import" />
 
-    <!-- Search bar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_search_toggle"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        app:icon="@android:drawable/ic_menu_search"
+        app:iconPadding="0dp"
+        app:layout_constraintTop_toTopOf="@id/button_import"
+        app:layout_constraintBottom_toBottomOf="@id/button_import"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Search bar — hidden until toggle is tapped -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/search_layout"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -145,6 +152,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:hint="@string/hint_search"
+        android:visibility="gone"
         app:startIconDrawable="@android:drawable/ic_menu_search"
         app:layout_constraintTop_toBottomOf="@id/button_import"
         app:layout_constraintStart_toStartOf="parent"

@@ -26,7 +26,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import com.gregoryhpotter.textlistscanner.R
 import com.gregoryhpotter.textlistscanner.databinding.FragmentCameraBinding
 import com.gregoryhpotter.textlistscanner.feedback.AudioFeedbackTone
@@ -95,10 +94,6 @@ class CameraFragment : Fragment() {
 
         if (hasCameraPermission()) startCamera()
         else requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-
-        binding.fabWordList.setOnClickListener {
-            findNavController().navigate(R.id.action_camera_to_wordlist)
-        }
 
         observeUiState()
     }
