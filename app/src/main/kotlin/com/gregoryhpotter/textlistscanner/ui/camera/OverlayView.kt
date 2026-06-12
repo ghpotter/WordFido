@@ -108,7 +108,7 @@ class OverlayView @JvmOverloads constructor(
     companion object {
         private const val STROKE_WIDTH = 4f
         private const val CORNER_RADIUS = 6f
-        private const val MARKER_ALPHA = 80 // out of 255 — semi-transparent
+        private const val MARKER_ALPHA = 80
     }
 }
 
@@ -117,12 +117,10 @@ class OverlayView @JvmOverloads constructor(
  *
  * @param rect   Bounding box in [OverlayView] coordinate space
  * @param color  ARGB color from the matching [WordEntry]
- * @param label  The matched word text (reserved for future label drawing)
  */
 data class HighlightData(
     val rect: MapperRect,
-    val color: Int,
-    val label: String
+    val color: Int
 )
 
 /**

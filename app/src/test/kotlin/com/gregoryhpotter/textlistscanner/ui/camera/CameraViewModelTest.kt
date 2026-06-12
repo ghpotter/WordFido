@@ -46,7 +46,6 @@ class CameraViewModelTest {
         every { settingsRepository.wholeWord } returns true
         every { settingsRepository.hapticEnabled } returns true
         every { settingsRepository.audioEnabled } returns true
-        every { settingsRepository.visualEnabled } returns true
         every { settingsRepository.audioTone } returns AudioFeedbackTone.Beep
 
         viewModel = CameraViewModel(wordListRepository, settingsRepository)
@@ -79,11 +78,6 @@ class CameraViewModelTest {
     @Test
     fun `default audio enabled is true`() = runTest {
         assertTrue(viewModel.uiState.value.audioEnabled)
-    }
-
-    @Test
-    fun `default visual enabled is true`() = runTest {
-        assertTrue(viewModel.uiState.value.visualEnabled)
     }
 
     // -------------------------------------------------------------------------
@@ -133,12 +127,6 @@ class CameraViewModelTest {
     }
 
     @Test
-    fun `setVisualEnabled updates state`() = runTest {
-        viewModel.setVisualEnabled(false)
-        assertFalse(viewModel.uiState.value.visualEnabled)
-    }
-
-    @Test
     fun `setHapticEnabled can be toggled back`() = runTest {
         viewModel.setHapticEnabled(false)
         viewModel.setHapticEnabled(true)
@@ -150,13 +138,6 @@ class CameraViewModelTest {
         viewModel.setAudioEnabled(false)
         viewModel.setAudioEnabled(true)
         assertTrue(viewModel.uiState.value.audioEnabled)
-    }
-
-    @Test
-    fun `setVisualEnabled can be toggled back`() = runTest {
-        viewModel.setVisualEnabled(false)
-        viewModel.setVisualEnabled(true)
-        assertTrue(viewModel.uiState.value.visualEnabled)
     }
 
     // -------------------------------------------------------------------------
@@ -275,9 +256,4 @@ class CameraViewModelTest {
         verify { settingsRepository.audioEnabled = false }
     }
 
-    @Test
-    fun `setVisualEnabled persists to settings`() = runTest {
-        viewModel.setVisualEnabled(false)
-        verify { settingsRepository.visualEnabled = false }
-    }
 }

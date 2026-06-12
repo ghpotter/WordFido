@@ -23,8 +23,7 @@ data class CameraUiState(
     // Feedback settings
     val hapticEnabled: Boolean = true,
     val audioEnabled: Boolean = true,
-    val audioTone: AudioFeedbackTone = AudioFeedbackTone.Beep,
-    val visualEnabled: Boolean = true
+    val audioTone: AudioFeedbackTone = AudioFeedbackTone.Beep
 )
 
 @HiltViewModel
@@ -43,7 +42,6 @@ class CameraViewModel @Inject constructor(
             wholeWord     = settingsRepository.wholeWord,
             hapticEnabled = settingsRepository.hapticEnabled,
             audioEnabled  = settingsRepository.audioEnabled,
-            visualEnabled = settingsRepository.visualEnabled,
             audioTone     = settingsRepository.audioTone
         )
     }
@@ -95,11 +93,6 @@ class CameraViewModel @Inject constructor(
     fun setAudioEnabled(value: Boolean) {
         settingsRepository.audioEnabled = value
         _uiState.value = _uiState.value.copy(audioEnabled = value)
-    }
-
-    fun setVisualEnabled(value: Boolean) {
-        settingsRepository.visualEnabled = value
-        _uiState.value = _uiState.value.copy(visualEnabled = value)
     }
 
     fun setAudioTone(tone: AudioFeedbackTone) {

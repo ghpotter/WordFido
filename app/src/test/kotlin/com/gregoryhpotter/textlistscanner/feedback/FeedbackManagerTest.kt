@@ -1,8 +1,11 @@
 package com.gregoryhpotter.textlistscanner.feedback
 
+import com.gregoryhpotter.textlistscanner.feedback.AudioFeedbackTone
 import io.mockk.Called
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -137,5 +140,43 @@ class FeedbackManagerTest {
     @Test
     fun `clearing words with nothing detected does not throw`() {
         manager.onWordsCleared() // should be a no-op
+    }
+
+    // -------------------------------------------------------------------------
+    // Return value of onWordDetected
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `onWordDetected returns true on first detection`() {
+        assertTrue(manager.onWordDetected("exit"))
+    }
+
+    @Test
+    fun `onWordDetected returns false on repeated detection of same word`() {
+        manager.onWordDetected("exit")
+        assertFalse(manager.onWordDetected("exit"))
+    }
+
+    @Test
+    fun `onWordDetected returns true again after words cleared`() {
+        manager.onWordDetected("exit")
+        manager.onWordsCleared()
+        assertTrue(manager.onWordDetected("exit"))
+    }
+
+    // -------------------------------------------------------------------------
+    // setAudioTone and release
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `setAudioTone forwards tone to audio provider`() {
+        manager.setAudioTone(AudioFeedbackTone.Prompt)
+        verify { audioProvider.setTone(AudioFeedbackTone.Prompt) }
+    }
+
+    @Test
+    fun `release delegates to audio provider`() {
+        manager.release()
+        verify { audioProvider.release() }
     }
 }
