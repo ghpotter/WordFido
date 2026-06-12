@@ -48,8 +48,14 @@ class OcrResultProcessor @Inject constructor(
                     it.text.equals(matchedText, ignoreCase = !caseSensitive)
                 }
 
+                val strippedMatch = matchedText.stripPunctuation()
                 val matchingElements = line.elements.filter { element ->
-                    element.text.stripPunctuation().equals(matchedText.stripPunctuation(), ignoreCase = !caseSensitive)
+                    val strippedElement = element.text.stripPunctuation()
+                    if (wholeWord) {
+                        strippedElement.equals(strippedMatch, ignoreCase = !caseSensitive)
+                    } else {
+                        strippedElement.contains(strippedMatch, ignoreCase = !caseSensitive)
+                    }
                 }
 
                 if (matchingElements.isNotEmpty()) {

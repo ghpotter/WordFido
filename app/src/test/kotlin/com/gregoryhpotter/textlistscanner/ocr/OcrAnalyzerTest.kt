@@ -378,6 +378,63 @@ class OcrAnalyzerTest {
         assertEquals(lineBox, result.first().boundingBox)
     }
 
+    // -------------------------------------------------------------------------
+    // Bounding box: substring vs whole-word element matching
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `non-whole-word substring match uses element bounding box not line bounding box`() {
+        // "it" matches inside "exit" — the element "exit" should be highlighted
+        val wordList = listOf(WordEntry("it", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("it")
+
+        val lineBox = OcrBoundingBox(0, 0, 200, 20)
+        val elementBox = OcrBoundingBox(10, 2, 50, 18)
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit",
+                    boundingBox = lineBox,
+                    elements = listOf(OcrElement("exit", elementBox))
+                )
+            ),
+            wordList = wordList,
+            wholeWord = false
+        )
+
+        assertEquals(1, result.size)
+        assertEquals(elementBox, result.first().boundingBox)
+    }
+
+    @Test
+    fun `whole-word mode does not highlight element that merely contains the word`() {
+        // "exit" as a whole-word match — "exiting" element should not be highlighted
+        val wordList = listOf(WordEntry("exit", 0xFF0000, true))
+        every { wordMatcher.findMatches(any(), any(), any(), any()) } returns setOf("exit")
+
+        val exitBox = OcrBoundingBox(0, 0, 40, 20)
+        val exitingBox = OcrBoundingBox(50, 0, 120, 20)
+
+        val result = processor.process(
+            lines = listOf(
+                OcrLine(
+                    text = "exit exiting",
+                    boundingBox = OcrBoundingBox(0, 0, 200, 20),
+                    elements = listOf(
+                        OcrElement("exit", exitBox),
+                        OcrElement("exiting", exitingBox)
+                    )
+                )
+            ),
+            wordList = wordList,
+            wholeWord = true
+        )
+
+        assertEquals(1, result.size)
+        assertEquals(exitBox, result.first().boundingBox)
+    }
+
     @Test
     fun `matched result carries the source line text`() {
         val wordList = listOf(WordEntry("exit", 0xFF0000, true))
