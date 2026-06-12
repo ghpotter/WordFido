@@ -161,6 +161,7 @@ class WordListFragment : Fragment() {
         }
 
         binding.buttonNewProfile.setOnClickListener { showNewProfileDialog() }
+        binding.buttonRenameProfile.setOnClickListener { showRenameProfileDialog() }
         binding.buttonDeleteProfile.setOnClickListener { showDeleteProfileDialog() }
     }
 
@@ -227,6 +228,25 @@ class WordListFragment : Fragment() {
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isNotBlank()) viewModel.createProfile(name)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showRenameProfileDialog() {
+        val active = profileList.find { it.id == viewModel.uiState.value.activeProfileId } ?: return
+        val input = EditText(requireContext()).apply {
+            setText(active.name)
+            hint = getString(R.string.new_list_hint)
+            setSingleLine()
+            selectAll()
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.rename_list_title)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isNotBlank()) viewModel.renameProfile(active.id, name)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()

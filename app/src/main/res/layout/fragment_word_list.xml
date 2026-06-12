@@ -26,6 +26,19 @@
         android:paddingEnd="12dp"
         app:layout_constraintTop_toTopOf="@id/spinner_profile"
         app:layout_constraintBottom_toBottomOf="@id/spinner_profile"
+        app:layout_constraintEnd_toStartOf="@id/button_rename_profile" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_rename_profile"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="✏"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintTop_toTopOf="@id/spinner_profile"
+        app:layout_constraintBottom_toBottomOf="@id/spinner_profile"
         app:layout_constraintEnd_toStartOf="@id/button_delete_profile" />
 
     <com.google.android.material.button.MaterialButton

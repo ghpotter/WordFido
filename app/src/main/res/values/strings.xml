@@ -12,4 +12,5 @@
     <string name="new_list_hint">List name</string>
     <string name="delete_list_title">Delete list?</string>
     <string name="delete_list_message">"%1$s" and all its words will be deleted.</string>
+    <string name="rename_list_title">Rename list</string>
 </resources>
