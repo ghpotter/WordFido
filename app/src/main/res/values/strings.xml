@@ -20,4 +20,5 @@
     <string name="zoom_bar">Zoom bar</string>
     <string name="empty_state_no_words">No words yet.\nType a word above and tap + to add that word to the list.\nThen tap on the camera icon at the bottom to scan the image for the words on this list.</string>
     <string name="empty_state_no_results">No words match your search.</string>
+    <string name="scanning_mascot_description">Detective beagle dog with a magnifying glass</string>
 </resources>
