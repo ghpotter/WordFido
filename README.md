@@ -1,5 +1,4 @@
-# WordFido
-gi
+# ![WordFido icon](app/src/main/res/mipmap-mdpi/ic_launcher_foreground.webp) WordFido
 An Android app that uses your camera to scan for words in real time. Build a watchlist of words, point the camera at text, and WordFido highlights every match as it appears.
 
 ---
